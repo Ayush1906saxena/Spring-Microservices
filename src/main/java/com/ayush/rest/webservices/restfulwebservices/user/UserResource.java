@@ -1,10 +1,11 @@
 package com.ayush.rest.webservices.restfulwebservices.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -19,8 +20,24 @@ public class UserResource {
 
     @GetMapping("/users/{id}")
     public User retrieveUser(@PathVariable int id){
-        return service.findOne(id);
+        User user = service.findOne(id);
+        if (user == null)
+            throw new UserNotFoundException("id-"+id);
+        return user;
     }
 
+    @PostMapping("/users")
+    public ResponseEntity<Object> createUser(@RequestBody User user){
+        User savedUser = service.save(user);
 
+        // we need to indicate that a new object is created and
+        // let the user know its respective location
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedUser.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).build();
+    }
 }
